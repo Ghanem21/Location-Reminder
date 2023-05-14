@@ -2,6 +2,7 @@ package com.udacity.project4.authentication
 
 
 import android.app.Activity
+import android.app.Application
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -10,11 +11,12 @@ import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.firebase.auth.FirebaseAuth
 import com.udacity.project4.R
+import com.udacity.project4.base.BaseViewModel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
-class LogInViewModel : ViewModel() {
-    lateinit var activity:Activity
+class LogInViewModel(val app: Application) : BaseViewModel(app) {
+    //lateinit var activity:Activity
     var email = MutableLiveData<String>()
     var password = MutableLiveData<String>()
     var errorMessage = MutableLiveData<String>()
@@ -125,11 +127,11 @@ class LogInViewModel : ViewModel() {
 
     fun logInWithGoogle(){
         val options = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-            .requestIdToken(activity.getString(R.string.web_client_id))
+            .requestIdToken(app.getString(R.string.web_client_id))
             .requestEmail()
             .build()
 
-        googleSignInClient = GoogleSignIn.getClient(activity,options)
+        googleSignInClient = GoogleSignIn.getClient(app,options)
         signInWithGoogleListener.value = true
     }
 

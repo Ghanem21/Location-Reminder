@@ -122,7 +122,7 @@ class RemindersActivityTest :
         IdlingRegistry.getInstance().unregister(dataBindingIdlingResource)
     }
 
-    //check that after you enter Reminder fragment and eater all data required and hit save then there is a toast displaying Reminder saved
+    //check that after you enter Reminder fragment and enter all data required and hit save then there is a toast displaying Reminder saved
     @ExperimentalCoroutinesApi
     @Test
     fun showReminderSavedToast() = runBlocking{

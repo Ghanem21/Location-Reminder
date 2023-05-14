@@ -1,14 +1,19 @@
 package com.udacity.project4.authentication
 
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.EditText
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.contract.ActivityResultContracts.GetContent
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
@@ -18,11 +23,8 @@ import com.google.firebase.auth.GoogleAuthProvider
 import com.udacity.project4.R
 import com.udacity.project4.databinding.FragmentLoginBinding
 import com.udacity.project4.locationreminders.RemindersActivity
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import kotlinx.coroutines.tasks.await
-import kotlinx.coroutines.withContext
 
 const val REQUEST_CODE_SIGN_IN_WITH_GOOGLE_From_LogIn = 0
 class LoginFragment : Fragment() {
@@ -40,7 +42,8 @@ class LoginFragment : Fragment() {
         binding.viewModel = viewModel
         auth = FirebaseAuth.getInstance()
 
-        viewModel.activity = requireActivity()
+
+        //viewModel.activity = requireActivity()
 
         return binding.root
     }
@@ -99,17 +102,18 @@ class LoginFragment : Fragment() {
         viewModel.signInWithGoogleListener.observe(viewLifecycleOwner){
             if(it){
                 viewModel.googleSignInClient.signInIntent.also { intent ->
-                    startActivityForResult(intent, REQUEST_CODE_SIGN_IN_WITH_GOOGLE_From_LogIn)
+                    intent.putExtra("requestCode", REQUEST_CODE_SIGN_IN_WITH_GOOGLE_From_LogIn)
+                    resultLauncher.launch(intent)
                     viewModel.signInWithGoogleDone()
                 }
             }
         }
     }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if(requestCode == REQUEST_CODE_SIGN_IN_WITH_GOOGLE_From_LogIn){
-            val account = GoogleSignIn.getSignedInAccountFromIntent(data).result
+
+    var resultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if(result.resultCode == REQUEST_CODE_SIGN_IN_WITH_GOOGLE_From_LogIn){
+            val account = GoogleSignIn.getSignedInAccountFromIntent(result.data).result
             account?.let {
                 googleAuthForFirebase(it)
             }
@@ -118,16 +122,20 @@ class LoginFragment : Fragment() {
 
     private fun googleAuthForFirebase(account: GoogleSignInAccount) {
         val credentials = GoogleAuthProvider.getCredential(account.idToken,null)
-        CoroutineScope(Dispatchers.Main).launch{
+        lifecycleScope.launch{
+
             try {
                 withContext(Dispatchers.IO) {
                     auth.signInWithCredential(credentials).await()
                 }
                 if(auth.currentUser != null)
-                    requireActivity().startActivity(Intent(requireActivity(), RemindersActivity::class.java))
+                    startActivity(Intent(requireContext(), RemindersActivity::class.java))
             }catch (exe:Exception){
-                Toast.makeText(requireContext(),exe.message,Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(),exe.message, Toast.LENGTH_SHORT).show()
             }
         }
     }
+
+
+
 }
